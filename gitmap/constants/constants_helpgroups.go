@@ -18,6 +18,7 @@ const (
 	HelpGroupTasks       = "  File-Sync Tasks:"
 	HelpGroupUtilities   = "  Utilities:"
 	HelpGroupVisualize   = "  Visualization:"
+	HelpGroupCommitXfer  = "  Commit Transfer (replay between repos):"
 
 	HelpGroupHint    = "  Run any command with --help or -h for detailed usage and examples."
 	HelpGroupExample = "  Quick start:"
@@ -47,6 +48,7 @@ const (
 	CompactEnvTools   = "  env, install (in), uninstall (un)"
 	CompactTasks      = "  task"
 	CompactVisualize  = "  dashboard (db)"
+	CompactCommitXfer = "  commit-right (cmr) — LIVE,  commit-left (cml), commit-both (cmb) — scaffolds"
 	CompactUtilities  = "  setup, doctor, update, update-cleanup, version (v), completion (cmp), interactive (i), docs (d), help-dashboard (hd), gomod (gm), seo-write (sw), help"
 
 	CompactNoMatchFmt = "  No group matching '%s'. Showing all groups:\n"
@@ -69,5 +71,6 @@ var HelpGroupKeys = []string{
 	"environment",
 	"tasks",
 	"visualization",
+	"commit-transfer",
 	"utilities",
 }

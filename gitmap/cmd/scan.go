@@ -64,6 +64,7 @@ func executeScan(dir string, cfg model.Config, outFile string, ghDesktop, openFo
 
 	progress := newScanProgressRenderer(quiet)
 	var repos []scanner.RepoInfo
+	var err error
 	bench.Phase("scan.walk", func() {
 		repos, err = scanner.ScanDirWithOptions(absDir, scanner.ScanOptions{
 			ExcludeDirs: cfg.ExcludeDirs,

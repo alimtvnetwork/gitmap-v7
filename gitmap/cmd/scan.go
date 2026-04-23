@@ -44,11 +44,7 @@ func runScan(args []string) {
 // slow" — it pinpoints which phase (walk, DB upsert, project detection,
 // release import, desktop sync, …) actually consumed the time.
 func executeScan(dir string, cfg model.Config, outFile string, ghDesktop, openFolder, quiet, noVSCodeSync, noAutoTags bool, workers int, cache model.ScanCache) {
-	absDir, err := filepath.Abs(dir)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, constants.ErrScanFailed, dir, err)
-		os.Exit(1)
-	}
+	absDir := resolveScanTarget(dir)
 
 	bench := newScanBenchmark(absDir)
 	if !quiet {
@@ -68,6 +64,7 @@ func executeScan(dir string, cfg model.Config, outFile string, ghDesktop, openFo
 
 	progress := newScanProgressRenderer(quiet)
 	var repos []scanner.RepoInfo
+	var err error
 	bench.Phase("scan.walk", func() {
 		repos, err = scanner.ScanDirWithOptions(absDir, scanner.ScanOptions{
 			ExcludeDirs: cfg.ExcludeDirs,

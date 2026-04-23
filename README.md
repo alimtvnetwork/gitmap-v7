@@ -86,6 +86,22 @@ gitmap scan ~/projects
 gitmap ls
 ```
 
+The `[dir]` argument accepts **relative paths** and resolves them against
+your current working directory. Common shortcuts:
+
+```bash
+gitmap scan .          # scan the current directory
+gitmap scan ..         # scan the parent directory
+gitmap scan ../..      # scan two folders up
+gitmap scan ../../x    # scan the "x" folder two levels up
+gitmap scan ~/work     # "~" expands to your home directory
+```
+
+When the resolved path differs from what you typed, gitmap prints a
+one-line `↳ Resolved "<input>" → <abs>` hint so the target is
+unambiguous. Non-existent paths exit early with a clear error instead of
+silently falling back to the current directory.
+
 ### Navigate and pull
 
 ```bash

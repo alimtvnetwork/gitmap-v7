@@ -49,6 +49,30 @@ only the final summary line is emitted.
 
 ## Examples
 
+### Relative path targets
+
+The `[dir]` argument accepts any relative path. It is resolved against
+your current working directory using `filepath.Abs`, then validated to
+exist and to be a directory. When the resolved target differs from what
+you typed, gitmap prints a one-line `↳ Resolved` hint to stderr so the
+target is unambiguous.
+
+    gitmap scan .          # scan the current directory
+    gitmap scan ..         # scan the parent directory
+    gitmap scan ../..      # scan two folders up
+    gitmap scan ../../x    # scan the "x" folder two levels up
+    gitmap scan ~/work     # "~" expands to your home directory
+
+**Output (for `gitmap scan ../..`):**
+
+    ↳ Resolved "../.." → /home/alim/projects
+      ▶ gitmap scan v3.71.0 — /home/alim/projects
+    ...
+
+If the resolved path does not exist, gitmap exits with:
+
+    Error: scan target ../../nope does not exist (resolved to /home/alim/nope)
+
 ### Example 1: Scan a directory
 
     gitmap scan D:\wp-work

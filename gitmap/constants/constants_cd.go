@@ -128,7 +128,7 @@ const CDFuncPowerShell = `function gcd {
     return
   }
   $env:GITMAP_WRAPPER = "1"
-  $dest = & $real cd @args
+  $dest = & "$real" cd @args
   if ($LASTEXITCODE -ne 0) {
     return
   }
@@ -138,13 +138,13 @@ const CDFuncPowerShell = `function gcd {
 }
 
 function Get-GitmapCommand {
-  $cmd = Get-Command gitmap.exe -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
-  if ($cmd) {
-    return $cmd.Source
+  $cmd = @(Get-Command gitmap.exe -CommandType Application -ErrorAction SilentlyContinue)
+  if ($cmd.Count -gt 0) {
+    return [string]$cmd[0].Source
   }
-  $cmd = Get-Command gitmap -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
-  if ($cmd) {
-    return $cmd.Source
+  $cmd = @(Get-Command gitmap -CommandType Application -ErrorAction SilentlyContinue)
+  if ($cmd.Count -gt 0) {
+    return [string]$cmd[0].Source
   }
   return $null
 }
@@ -157,7 +157,7 @@ function gitmap {
   }
   if ($args.Count -gt 0 -and ($args[0] -eq 'cd' -or $args[0] -eq 'go')) {
     $env:GITMAP_WRAPPER = "1"
-    $dest = & $real @args
+    $dest = & "$real" @args
     if ($LASTEXITCODE -ne 0) {
       return
     }
@@ -166,7 +166,7 @@ function gitmap {
     }
     return
   }
-  & $real @args
+  & "$real" @args
 }`
 
 // CD function messages.

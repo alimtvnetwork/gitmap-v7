@@ -182,5 +182,6 @@ function gitmap {
 // CD function messages.
 const (
 	MsgCDFuncInstalled = "Installed 'gitmap'/'gcd' shell wrappers — restart your terminal or source your profile\n"
-	MsgCDFuncAlready   = "Shell wrappers for 'gitmap'/'gcd' already installed\n"
+	MsgCDFuncAlready   = "Shell wrappers for 'gitmap'/'gcd' already installed (current version)\n"
+	MsgCDFuncUpgraded  = "Upgraded 'gitmap'/'gcd' shell wrappers — restart your terminal or source your profile\n"
 )

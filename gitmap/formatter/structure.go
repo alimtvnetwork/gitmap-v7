@@ -7,8 +7,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/alimtvnetwork/gitmap-v6/gitmap/constants"
-	"github.com/alimtvnetwork/gitmap-v6/gitmap/model"
+	"github.com/alimtvnetwork/gitmap-v7/gitmap/constants"
+	"github.com/alimtvnetwork/gitmap-v7/gitmap/model"
 )
 
 // WriteStructure writes a Markdown folder tree of discovered repos.

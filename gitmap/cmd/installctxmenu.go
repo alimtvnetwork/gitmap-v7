@@ -6,7 +6,7 @@ import (
 	"os/exec"
 	"runtime"
 
-	"github.com/alimtvnetwork/gitmap-v6/gitmap/constants"
+	"github.com/alimtvnetwork/gitmap-v7/gitmap/constants"
 )
 
 // runVSCodeContextMenu adds VS Code to the Windows right-click context menu.

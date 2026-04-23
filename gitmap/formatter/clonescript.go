@@ -4,7 +4,7 @@ package formatter
 import (
 	"io"
 
-	"github.com/alimtvnetwork/gitmap-v6/gitmap/model"
+	"github.com/alimtvnetwork/gitmap-v7/gitmap/model"
 )
 
 // WriteCloneScript writes a self-contained PowerShell clone script

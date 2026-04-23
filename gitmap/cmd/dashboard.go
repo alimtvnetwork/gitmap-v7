@@ -7,8 +7,8 @@ import (
 	"os/exec"
 	"runtime"
 
-	"github.com/alimtvnetwork/gitmap-v6/gitmap/constants"
-	"github.com/alimtvnetwork/gitmap-v6/gitmap/dashboard"
+	"github.com/alimtvnetwork/gitmap-v7/gitmap/constants"
+	"github.com/alimtvnetwork/gitmap-v7/gitmap/dashboard"
 )
 
 // runDashboard handles the "dashboard" subcommand.

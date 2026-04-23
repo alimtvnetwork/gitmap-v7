@@ -3,7 +3,7 @@ package cmd
 import (
 	"strings"
 
-	"github.com/alimtvnetwork/gitmap-v6/gitmap/render"
+	"github.com/alimtvnetwork/gitmap-v7/gitmap/render"
 )
 
 // Flag tokens for pretty-mode parsing. Two synonym pairs are accepted so

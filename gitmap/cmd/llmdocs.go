@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/alimtvnetwork/gitmap-v6/gitmap/constants"
+	"github.com/alimtvnetwork/gitmap-v7/gitmap/constants"
 )
 
 // runLLMDocs generates LLM.md or prints to stdout with --stdout.

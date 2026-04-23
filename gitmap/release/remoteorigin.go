@@ -6,7 +6,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/alimtvnetwork/gitmap-v6/gitmap/constants"
+	"github.com/alimtvnetwork/gitmap-v7/gitmap/constants"
 )
 
 // ParseRemoteOrigin extracts owner/repo from the git remote origin URL.

@@ -5,8 +5,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/alimtvnetwork/gitmap-v6/gitmap/constants"
-	"github.com/alimtvnetwork/gitmap-v6/gitmap/verbose"
+	"github.com/alimtvnetwork/gitmap-v7/gitmap/constants"
+	"github.com/alimtvnetwork/gitmap-v7/gitmap/verbose"
 )
 
 // gitignoreEntries lists paths that must be present in .gitignore.

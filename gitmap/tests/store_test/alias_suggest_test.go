@@ -4,7 +4,7 @@ package store_test
 import (
 	"testing"
 
-	"github.com/alimtvnetwork/gitmap-v6/gitmap/store"
+	"github.com/alimtvnetwork/gitmap-v7/gitmap/store"
 )
 
 // --- Suggestion: uses RepoName as proposed alias ---

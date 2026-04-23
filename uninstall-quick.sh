@@ -20,7 +20,7 @@
 #        - prompt before deleting ~/.config/gitmap
 #
 # Usage:
-#   curl -fsSL https://raw.githubusercontent.com/alimtvnetwork/gitmap-v6/main/uninstall-quick.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/alimtvnetwork/gitmap-v7/main/uninstall-quick.sh | bash
 #   ./uninstall-quick.sh
 #   ./uninstall-quick.sh --keep-data
 #   ./uninstall-quick.sh --dir /opt/gitmap

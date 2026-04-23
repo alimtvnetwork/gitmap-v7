@@ -4,7 +4,7 @@ package gitutil
 import (
 	"time"
 
-	"github.com/alimtvnetwork/gitmap-v6/gitmap/constants"
+	"github.com/alimtvnetwork/gitmap-v7/gitmap/constants"
 )
 
 // FormatDisplayDate converts a time.Time to the local time zone

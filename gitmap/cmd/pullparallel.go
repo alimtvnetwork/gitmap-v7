@@ -3,8 +3,8 @@ package cmd
 import (
 	"sync"
 
-	"github.com/alimtvnetwork/gitmap-v6/gitmap/cloner"
-	"github.com/alimtvnetwork/gitmap-v6/gitmap/model"
+	"github.com/alimtvnetwork/gitmap-v7/gitmap/cloner"
+	"github.com/alimtvnetwork/gitmap-v7/gitmap/model"
 )
 
 // runPullParallel pulls every record concurrently using a worker pool of

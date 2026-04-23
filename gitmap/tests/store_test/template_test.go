@@ -4,8 +4,8 @@ package store_test
 import (
 	"testing"
 
-	"github.com/alimtvnetwork/gitmap-v6/gitmap/constants"
-	"github.com/alimtvnetwork/gitmap-v6/gitmap/store"
+	"github.com/alimtvnetwork/gitmap-v7/gitmap/constants"
+	"github.com/alimtvnetwork/gitmap-v7/gitmap/store"
 )
 
 // openTestDB creates an in-memory-style temp DB for testing.

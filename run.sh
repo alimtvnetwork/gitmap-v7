@@ -481,7 +481,7 @@ build_binary() {
     cd "$GITMAP_DIR"
     local abs_repo_root
     abs_repo_root=$(cd "$REPO_ROOT" && pwd)
-    local ldflags="-X 'github.com/alimtvnetwork/gitmap-v6/gitmap/constants.RepoPath=$abs_repo_root'"
+    local ldflags="-X 'github.com/alimtvnetwork/gitmap-v7/gitmap/constants.RepoPath=$abs_repo_root'"
 
     if ! go build -ldflags "$ldflags" -o "$out_path" . 2>&1; then
         write_fail "Go build failed"

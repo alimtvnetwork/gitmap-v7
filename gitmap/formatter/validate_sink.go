@@ -10,7 +10,7 @@ import (
 	"os"
 	"sync"
 
-	"github.com/alimtvnetwork/gitmap-v6/gitmap/model"
+	"github.com/alimtvnetwork/gitmap-v7/gitmap/model"
 )
 
 // validationSink is the io.Writer that receives per-issue warning lines.

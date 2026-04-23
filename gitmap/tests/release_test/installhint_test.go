@@ -6,8 +6,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/alimtvnetwork/gitmap-v6/gitmap/constants"
-	"github.com/alimtvnetwork/gitmap-v6/gitmap/release"
+	"github.com/alimtvnetwork/gitmap-v7/gitmap/constants"
+	"github.com/alimtvnetwork/gitmap-v7/gitmap/release"
 )
 
 func TestShouldPrintInstallHint_GitmapRepos(t *testing.T) {
@@ -16,11 +16,11 @@ func TestShouldPrintInstallHint_GitmapRepos(t *testing.T) {
 		url  string
 		want bool
 	}{
-		{"HTTPS match", "https://github.com/alimtvnetwork/gitmap-v6.git", true},
-		{"HTTPS without .git", "https://github.com/alimtvnetwork/gitmap-v6", true},
-		{"SSH match", "git@github.com:alimtvnetwork/gitmap-v6.git", true},
+		{"HTTPS match", "https://github.com/alimtvnetwork/gitmap-v7.git", true},
+		{"HTTPS without .git", "https://github.com/alimtvnetwork/gitmap-v7", true},
+		{"SSH match", "git@github.com:alimtvnetwork/gitmap-v7.git", true},
 		{"Mixed case", "https://GitHub.com/AlimTVNetwork/Gitmap-V2.git", true},
-		{"Subpath match", "https://github.com/alimtvnetwork/gitmap-v6/tree/main", true},
+		{"Subpath match", "https://github.com/alimtvnetwork/gitmap-v7/tree/main", true},
 	}
 
 	for _, tc := range cases {
@@ -38,7 +38,7 @@ func TestShouldPrintInstallHint_NonGitmapRepos(t *testing.T) {
 		name string
 		url  string
 	}{
-		{"Different org", "https://github.com/otherorg/gitmap-v6.git"},
+		{"Different org", "https://github.com/otherorg/gitmap-v7.git"},
 		{"Different repo", "https://github.com/alimtvnetwork/other-repo.git"},
 		{"Unrelated repo", "https://github.com/user/myproject.git"},
 		{"Empty string", ""},

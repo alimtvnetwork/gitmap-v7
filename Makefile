@@ -5,7 +5,7 @@ LINT     := golangci-lint
 MODULE   := gitmap
 BINARY   := gitmap
 VERSION  ?= dev
-LDFLAGS  := -s -w -X 'github.com/alimtvnetwork/gitmap-v6/gitmap/constants.Version=$(VERSION)'
+LDFLAGS  := -s -w -X 'github.com/alimtvnetwork/gitmap-v7/gitmap/constants.Version=$(VERSION)'
 
 all: lint test build
 

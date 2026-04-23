@@ -30,10 +30,7 @@ import (
 // an unseeded DB just means the next subcommand falls back to the
 // hard-coded defaults until the user runs `gitmap downloader-config`.
 func (db *DB) SeedDownloaderConfig(seedPath string) {
-	doc, hash, ok := loadSeedOrDefaults(seedPath)
-	if !ok {
-		return
-	}
+	doc, hash := loadSeedOrDefaults(seedPath)
 
 	existing, hasExisting := db.GetDownloaderConfig()
 	prevHash := db.GetDownloaderSeedHash()
@@ -68,9 +65,9 @@ func (db *DB) SeedDownloaderConfig(seedPath string) {
 
 // loadSeedOrDefaults resolves the seed file relative to the active
 // binary's data dir. Returns the Defaults() document when the file is
-// missing or unparseable, with ok=true so the seeder still persists a
-// usable baseline on first run.
-func loadSeedOrDefaults(seedPath string) (downloaderconfig.Document, string, bool) {
+// missing or unparseable so the seeder still persists a usable baseline
+// on first run.
+func loadSeedOrDefaults(seedPath string) (downloaderconfig.Document, string) {
 	resolved := resolveSeedPath(seedPath)
 	doc, err := downloaderconfig.LoadFile(resolved)
 	if err != nil {
@@ -79,10 +76,10 @@ func loadSeedOrDefaults(seedPath string) (downloaderconfig.Document, string, boo
 		}
 		fallback := downloaderconfig.Defaults()
 
-		return fallback, downloaderconfig.SeedHash(fallback), true
+		return fallback, downloaderconfig.SeedHash(fallback)
 	}
 
-	return doc, downloaderconfig.SeedHash(doc), true
+	return doc, downloaderconfig.SeedHash(doc)
 }
 
 // resolveSeedPath turns a relative seed path into an absolute path

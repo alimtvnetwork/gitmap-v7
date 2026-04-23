@@ -165,7 +165,7 @@ func matchAny(name string, patterns []string, emptyDefault bool) bool {
 func buildArchiver(format Format, mode CompressionMode) (archives.Archiver, error) {
 	switch format {
 	case FormatZip:
-		return archives.Zip{Compression: zipMethod(mode), SelectiveCompression: true}, nil
+		return archives.Zip{Compression: zip.Deflate, SelectiveCompression: true}, nil
 	case FormatTar:
 		return archives.Tar{}, nil
 	case FormatTarGz:
@@ -176,22 +176,11 @@ func buildArchiver(format Format, mode CompressionMode) (archives.Archiver, erro
 		return archives.CompressedArchive{Archival: archives.Tar{}, Compression: archives.Xz{}}, nil
 	case FormatTarZst:
 		return archives.CompressedArchive{Archival: archives.Tar{}, Compression: archives.Zstd{}}, nil
+	case FormatGz, FormatBz2, FormatXz, FormatZst, Format7z, FormatRar, FormatUnknown:
+		return nil, errors.New("format not supported as archiver")
 	}
 
 	return nil, errors.New("format not supported as archiver")
-}
-
-// zipMethod maps mode → zip method constant. Zip's flate level is
-// implicit in the method choice; mholt/zip exposes only the method.
-func zipMethod(mode CompressionMode) uint16 {
-	switch mode {
-	case ModeFast:
-		return zip.Deflate // method only — actual level handled by stdlib defaults
-	case ModeBest:
-		return zip.Deflate
-	}
-
-	return zip.Deflate
 }
 
 // gzipLevel maps mode → compress/gzip level.
@@ -201,6 +190,8 @@ func gzipLevel(mode CompressionMode) int {
 		return gzip.BestSpeed
 	case ModeBest:
 		return gzip.BestCompression
+	case ModeStandard:
+		return gzip.DefaultCompression
 	}
 
 	return gzip.DefaultCompression
@@ -213,6 +204,8 @@ func bz2Level(mode CompressionMode) int {
 		return 1
 	case ModeBest:
 		return 9
+	case ModeStandard:
+		return 6
 	}
 
 	return 6
@@ -227,6 +220,8 @@ func flateLevel(mode CompressionMode) int {
 		return flate.BestSpeed
 	case ModeBest:
 		return flate.BestCompression
+	case ModeStandard:
+		return flate.DefaultCompression
 	}
 
 	return flate.DefaultCompression

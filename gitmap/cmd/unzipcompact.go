@@ -14,7 +14,6 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"path/filepath"
 
 	"github.com/alimtvnetwork/gitmap-v6/gitmap/archive"
 	"github.com/alimtvnetwork/gitmap-v6/gitmap/constants"
@@ -161,19 +160,3 @@ func finishArchiveRow(db *store.DB, id int64, outputPath, format string, usedTem
 	fmt.Fprintf(os.Stderr, constants.MsgArchiveHistoryRecorded+"\n", id, status)
 }
 
-// absOrCwd returns the absolute form of p, falling back to the current
-// directory when p is empty. Used by callers that accept an optional
-// destination argument.
-func absOrCwd(p string) string {
-	if p == "" {
-		cwd, _ := os.Getwd()
-
-		return cwd
-	}
-	abs, err := filepath.Abs(p)
-	if err != nil {
-		return p
-	}
-
-	return abs
-}

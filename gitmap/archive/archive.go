@@ -19,6 +19,7 @@ package archive
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -117,6 +118,8 @@ func (f Format) Extension() string {
 		return ".7z"
 	case FormatRar:
 		return ".rar"
+	case FormatUnknown:
+		return ""
 	}
 
 	return ""
@@ -219,7 +222,7 @@ func ListEntries(ctx context.Context, path string) ([]Entry, Format, error) {
 
 		return nil
 	})
-	if err != nil && err != io.EOF {
+	if err != nil && !errors.Is(err, io.EOF) {
 		return out, mholtToFormat(format), err
 	}
 

@@ -58,31 +58,78 @@ func appendCDFunctions(snippet string, profilePaths []string) error {
 	return nil
 }
 
-// appendCDFunction appends the gcd function to the profile if not present.
+// appendCDFunction installs or upgrades the gcd function in the profile.
+//
+// Behaviour:
+//   - No managed block present → append a fresh block (Installed message).
+//   - Current marker present → no-op (Already-installed message).
+//   - Stale marker present (older version) → strip the previous block
+//     and append the new one (Upgraded message).
+//
+// The managed block is delimited by `CDFuncMarker` (start) and
+// `CDFuncEndMarker` (end). Any historical marker line beginning with
+// `CDFuncMarkerPrefix` is treated as the start of a stale block.
 func appendCDFunction(snippet, profilePath string) error {
 	if err := os.MkdirAll(filepath.Dir(profilePath), 0o755); err != nil {
 		return fmt.Errorf(constants.ErrCompProfileWrite, profilePath, err)
 	}
 
-	existing, err := os.ReadFile(profilePath)
-	if err == nil && strings.Contains(string(existing), constants.CDFuncMarker) {
+	existing, _ := os.ReadFile(profilePath)
+	existingStr := string(existing)
+
+	if strings.Contains(existingStr, constants.CDFuncMarker) {
 		fmt.Fprintf(os.Stderr, constants.MsgCDFuncAlready)
 
 		return nil
 	}
 
-	f, err := os.OpenFile(profilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
-	if err != nil {
-		return fmt.Errorf(constants.ErrCompProfileWrite, profilePath, err)
-	}
-	defer f.Close()
+	cleaned, hadStale := stripStaleCDBlock(existingStr)
+	updated := cleaned + fmt.Sprintf("\n%s\n%s\n%s\n",
+		constants.CDFuncMarker, snippet, constants.CDFuncEndMarker)
 
-	_, err = fmt.Fprintf(f, "\n%s\n%s\n", constants.CDFuncMarker, snippet)
-	if err != nil {
+	if err := os.WriteFile(profilePath, []byte(updated), 0o644); err != nil {
 		return fmt.Errorf(constants.ErrCompProfileWrite, profilePath, err)
 	}
 
-	fmt.Fprintf(os.Stderr, constants.MsgCDFuncInstalled)
+	if hadStale {
+		fmt.Fprintf(os.Stderr, constants.MsgCDFuncUpgraded)
+	} else {
+		fmt.Fprintf(os.Stderr, constants.MsgCDFuncInstalled)
+	}
 
 	return nil
+}
+
+// stripStaleCDBlock removes any previously-installed managed wrapper
+// block from the profile. A block runs from a line starting with
+// CDFuncMarkerPrefix down to the first CDFuncEndMarker line, or — for
+// pre-end-marker installs — to the closing backtick of the snippet
+// (matched by a line containing only `}` followed by a backtick).
+//
+// Returns the cleaned content and whether anything was removed.
+func stripStaleCDBlock(content string) (string, bool) {
+	lines := strings.Split(content, "\n")
+	out := make([]string, 0, len(lines))
+	removed := false
+	skipping := false
+
+	for _, line := range lines {
+		trimmed := strings.TrimSpace(line)
+		if !skipping && strings.HasPrefix(trimmed, constants.CDFuncMarkerPrefix) {
+			skipping = true
+			removed = true
+
+			continue
+		}
+		if skipping {
+			if trimmed == constants.CDFuncEndMarker || trimmed == "}`" {
+				skipping = false
+			}
+
+			continue
+		}
+		out = append(out, line)
+	}
+
+	return strings.TrimRight(strings.Join(out, "\n"), "\n"), removed
 }

@@ -1,9 +1,7 @@
 # gitmap commit-right
 
-> **Status (v3.74.0):** scaffold only. The command is wired into the
-> CLI, but the replay engine is deferred to a follow-up release.
-> Running it today validates args and exits 2 with a pointer to this
-> spec. Full implementation lands per spec §18 (Phase 1).
+> **Status (v3.76.0):** **LIVE.** Phase 1 of spec/01-app/106 has shipped.
+> `commit-left` and `commit-both` are still scaffolds.
 
 Replay LEFT's commits onto RIGHT as a fresh, cleaned commit sequence.
 The "-right" suffix names the **destination**, exactly like

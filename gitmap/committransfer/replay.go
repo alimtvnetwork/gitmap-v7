@@ -123,7 +123,7 @@ func snapshotCopy(source, target string, opts Options) error {
 }
 
 // shouldSkipPath returns true for paths the snapshot must ignore.
-func shouldSkipPath(rel string, info os.FileInfo, opts Options) bool {
+func shouldSkipPath(rel string, _ os.FileInfo, opts Options) bool {
 	if rel == "." {
 		return false
 	}

@@ -39,6 +39,7 @@ import (
 func scheduleDeployedCleanupHandoff() {
 	dumpDebugWindowsHeader("phase-3 handoff (update-runner)")
 	defer dumpDebugWindowsFooter()
+	fmt.Printf(constants.MsgUpdatePhase3LogFile, handoffLogPath())
 
 	deployed, source := resolveDeployedBinaryPath()
 	if len(deployed) == 0 {

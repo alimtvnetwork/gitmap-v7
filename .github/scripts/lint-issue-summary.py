@@ -20,11 +20,17 @@ Behaviour:
     with Status / Reported / Root Cause (per linter) / Files Affected /
     Prevention sections).
   - Idempotent: computes a fingerprint of the NEW finding set; if an
-    open entry with the same fingerprint already exists, the file is
-    left untouched.
-  - In --dry-run mode (default for PR runs) writes the proposed entry to
-    --out-preview only. In --apply mode (used on main), writes the entry
-    into the issues file in place.
+    open entry with the same fingerprint already exists, no new entry
+    is appended.
+  - **Auto-resolves stale entries**: any prior open `## NN — CI Lint
+    Failures` entry whose fingerprint marker no longer matches a NEW
+    finding set is rewritten in place — its `Status` line flips to
+    `FIXED (auto-detected …)` so the issues file stays in sync with
+    reality without manual sweeps.
+  - In --dry-run mode (default for PR runs) writes the proposed entry
+    AND the auto-resolved file preview to --out-preview only. In
+    --apply mode (used on main), writes the changes into the issues
+    file in place.
 
 Exit codes:
   0  — success (entry appended, skipped as duplicate, or no NEW findings)
@@ -46,7 +52,12 @@ from typing import Iterable
 Finding = tuple[str, int, str, str]  # (file, line, linter, message)
 
 ENTRY_MARKER = "<!-- ci-lint-issue:"
+ENTRY_MARKER_RE = re.compile(
+    r"<!--\s*ci-lint-issue:\s*([0-9a-f]+)\s*-->", re.IGNORECASE)
 SECTION_HEADER_RE = re.compile(r"^## (\d+)\s+—", re.MULTILINE)
+STATUS_LINE_RE = re.compile(
+    r"^(- \*\*Status\*\*:\s*)(.*)$", re.MULTILINE)
+OPEN_STATUS_RE = re.compile(r"^\s*open\b", re.IGNORECASE)
 
 
 def main() -> int:

@@ -15,11 +15,21 @@ const FlagReportErrors = "--report-errors"
 const FlagReportErrorsFile = "--report-errors-file"
 const FlagDebugRepoDetect = "--debug-repo-detect"
 const FlagDebugWindows = "--debug-windows"
+const FlagDebugWindowsJSON = "--debug-windows-json"
 
 // Debug-windows env bridge — propagated to the detached cleanup child so
 // the dump runs on both sides of the handoff without requiring users to
 // pass the flag twice.
 const EnvDebugWindows = "GITMAP_DEBUG_WINDOWS"
+
+// Debug-windows JSON-sink env bridge. Set automatically when the sink
+// opens so the Phase 3 cleanup child appends to the SAME file as the
+// parent, giving one consolidated NDJSON trace per handoff.
+const EnvDebugWindowsJSON = "GITMAP_DEBUG_WINDOWS_JSON"
+
+// Default filename pattern for the JSON sink. %s = local timestamp
+// formatted as 2006-01-02_15-04-05.
+const DebugWindowsJSONFileFmt = "gitmap-debug-windows-%s.jsonl"
 
 // Report-errors values and env-var bridge to run.ps1 / run.sh.
 const (
@@ -121,6 +131,10 @@ const (
 	MsgDebugWinCleanShimSkip = "skipped"
 	MsgDebugWinCleanShimDel  = "will os.Remove"
 	MsgDebugWinCleanFooter = "[debug-windows] --------------------------------------\n"
+
+	// JSON sink — appended NDJSON events alongside the console dump.
+	MsgDebugWinJSONFile     = "[debug-windows] json sink file   : %s\n"
+	MsgDebugWinJSONOpenFail = "[debug-windows] json sink open failed: %s (%v)\n"
 
 )
 

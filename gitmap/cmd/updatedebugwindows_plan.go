@@ -37,9 +37,13 @@ func dumpDebugWindowsCommandPlan(deployed string, childArgs []string) {
 		return
 	}
 	full := append([]string{deployed}, childArgs...)
-	fmt.Fprintf(os.Stderr, constants.MsgDebugWinCmdLine,
-		renderShellCommand(full))
+	cmdLine := renderShellCommand(full)
+	fmt.Fprintf(os.Stderr, constants.MsgDebugWinCmdLine, cmdLine)
 	fmt.Fprint(os.Stderr, constants.MsgDebugWinCmdNote)
+	emitDebugWindowsJSON("command_plan", map[string]any{
+		"deployed": deployed, "child_args": childArgs,
+		"command_line": cmdLine,
+	})
 }
 
 // renderShellCommand quotes each token with double quotes (escaping
@@ -79,76 +83,115 @@ func dumpDebugWindowsCleanupPlan(ctx updateCleanupContext) {
 		return
 	}
 	fmt.Fprint(os.Stderr, constants.MsgDebugWinCleanHdr)
-	dumpPlannedRemovals(ctx.tempPatterns, ctx.selfPath,
+	tempOps := dumpPlannedRemovals(ctx.tempPatterns, ctx.selfPath,
 		constants.MsgDebugWinCleanMatch)
-	dumpPlannedRemovals(ctx.backupPatterns, ctx.selfPath,
+	backupOps := dumpPlannedRemovals(ctx.backupPatterns, ctx.selfPath,
 		constants.MsgDebugWinCleanMatch)
-	dumpPlannedSwapDirs(ctx)
-	dumpPlannedDriveRootShim(ctx)
+	swapOps := dumpPlannedSwapDirs(ctx)
+	shim, shimVerdict := dumpPlannedDriveRootShim(ctx)
 	fmt.Fprint(os.Stderr, constants.MsgDebugWinCleanFooter)
+	emitDebugWindowsJSON("cleanup_plan", map[string]any{
+		"temp_removals":   tempOps,
+		"backup_removals": backupOps,
+		"swap_dirs":       swapOps,
+		"drive_root_shim": map[string]any{
+			"path": shim, "verdict": shimVerdict,
+		},
+	})
 }
 
 // dumpPlannedRemovals prints each glob pattern and the matches that
 // would be passed to os.Remove. Skips matches equal to selfPath
 // because removeCleanupMatch will skip them too.
-func dumpPlannedRemovals(patterns []string, selfPath, matchFmt string) {
+func dumpPlannedRemovals(patterns []string, selfPath, matchFmt string) []map[string]any {
+	ops := make([]map[string]any, 0, len(patterns))
 	for _, pattern := range patterns {
 		fmt.Fprintf(os.Stderr, constants.MsgDebugWinCleanGlob, pattern)
 		matches, err := filepath.Glob(pattern)
 		if err != nil || len(matches) == 0 {
 			fmt.Fprint(os.Stderr, constants.MsgDebugWinCleanEmpty)
+			ops = append(ops, map[string]any{"glob": pattern, "matches": []string{}})
 
 			continue
 		}
-		printed := 0
-		for _, m := range matches {
-			if isActiveCleanupPath(normalizeCleanupPath(m), selfPath) {
-				continue
-			}
-			fmt.Fprintf(os.Stderr, matchFmt, m)
-			printed++
-		}
-		if printed == 0 {
+		printed := collectAndPrintMatches(matches, selfPath, matchFmt)
+		if len(printed) == 0 {
 			fmt.Fprint(os.Stderr, constants.MsgDebugWinCleanEmpty)
 		}
+		ops = append(ops, map[string]any{"glob": pattern, "matches": printed})
 	}
+
+	return ops
+}
+
+// collectAndPrintMatches filters the glob result the same way
+// removeCleanupMatch does and prints + returns the survivors.
+func collectAndPrintMatches(matches []string, selfPath, matchFmt string) []string {
+	printed := make([]string, 0, len(matches))
+	for _, m := range matches {
+		if isActiveCleanupPath(normalizeCleanupPath(m), selfPath) {
+			continue
+		}
+		fmt.Fprintf(os.Stderr, matchFmt, m)
+		printed = append(printed, m)
+	}
+
+	return printed
 }
 
 // dumpPlannedSwapDirs prints every *.gitmap-tmp-* dir the cleanup
 // pass will pass to os.RemoveAll. Mirrors removeCloneSwapDirsIn so
-// the dump cannot drift from the live behaviour.
-func dumpPlannedSwapDirs(ctx updateCleanupContext) {
+// the dump cannot drift from the live behaviour. Returns the matched
+// dirs so the JSON sink can record them too.
+func dumpPlannedSwapDirs(ctx updateCleanupContext) []map[string]any {
 	dirs := uniqueParentDirs(ctx.tempPatterns, ctx.backupPatterns)
+	ops := make([]map[string]any, 0, len(dirs))
 	for _, dir := range dirs {
 		pattern := filepath.Join(dir, cloneSwapDirGlob)
 		fmt.Fprintf(os.Stderr, constants.MsgDebugWinCleanGlob, pattern)
 		matches, err := filepath.Glob(pattern)
 		if err != nil || len(matches) == 0 {
 			fmt.Fprint(os.Stderr, constants.MsgDebugWinCleanEmpty)
+			ops = append(ops, map[string]any{"glob": pattern, "matches": []string{}})
 
 			continue
 		}
-		for _, m := range matches {
-			info, statErr := os.Stat(m)
-			if statErr != nil || !info.IsDir() {
-				continue
-			}
-			fmt.Fprintf(os.Stderr, constants.MsgDebugWinCleanSwap, m)
-		}
+		ops = append(ops, map[string]any{"glob": pattern,
+			"matches": collectSwapDirMatches(matches)})
 	}
+
+	return ops
+}
+
+// collectSwapDirMatches stat-filters glob hits to directories and
+// prints + returns those that are real swap dirs.
+func collectSwapDirMatches(matches []string) []string {
+	out := make([]string, 0, len(matches))
+	for _, m := range matches {
+		info, statErr := os.Stat(m)
+		if statErr != nil || !info.IsDir() {
+			continue
+		}
+		fmt.Fprintf(os.Stderr, constants.MsgDebugWinCleanSwap, m)
+		out = append(out, m)
+	}
+
+	return out
 }
 
 // dumpPlannedDriveRootShim reports the Windows-only drive-root shim
-// candidate and whether cleanup would actually delete it. Mirrors
-// the gating logic in cleanupDriveRootShim / isRemovableDriveRootShim.
-func dumpPlannedDriveRootShim(ctx updateCleanupContext) {
+// candidate and whether cleanup would actually delete it. Returns
+// (path, verdict) so the JSON sink can record the same fact.
+func dumpPlannedDriveRootShim(ctx updateCleanupContext) (string, string) {
 	shim := resolveDriveRootShimPath(ctx.selfPath)
 	if len(shim) == 0 {
-		return
+		return "", ""
 	}
 	verdict := constants.MsgDebugWinCleanShimSkip
 	if isRemovableDriveRootShim(shim, ctx.selfPath) {
 		verdict = constants.MsgDebugWinCleanShimDel
 	}
 	fmt.Fprintf(os.Stderr, constants.MsgDebugWinCleanShim, shim, verdict)
+
+	return shim, verdict
 }

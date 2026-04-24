@@ -67,6 +67,8 @@ func dumpDebugWindowsHeader(phase string) {
 	fmt.Fprintf(os.Stderr, constants.MsgDebugWinPID, os.Getpid())
 	fmt.Fprintf(os.Stderr, constants.MsgDebugWinPPID, os.Getppid())
 	fmt.Fprintf(os.Stderr, constants.MsgDebugWinLogFile, handoffLogPath())
+	emitDebugWindowsJSON("header", map[string]any{"phase": phase,
+		"handoff_log": handoffLogPath()})
 }
 
 // dumpDebugWindowsFooter closes a dump block. Symmetric with
@@ -76,6 +78,7 @@ func dumpDebugWindowsFooter() {
 		return
 	}
 	fmt.Fprint(os.Stderr, constants.MsgDebugWinFooter)
+	emitDebugWindowsJSON("footer", nil)
 }
 
 // dumpDebugWindowsHandoff prints the resolution + child-launch details
@@ -91,6 +94,11 @@ func dumpDebugWindowsHandoff(source, target string, childArgv []string) {
 	fmt.Fprintf(os.Stderr, constants.MsgDebugWinTargetExists, fileExists(target))
 	fmt.Fprintf(os.Stderr, constants.MsgDebugWinChildArgv, childArgv)
 	dumpDebugWindowsRelevantEnv()
+	emitDebugWindowsJSON("handoff", map[string]any{
+		"source": source, "target": target,
+		"target_exists": fileExists(target),
+		"child_argv":    childArgv,
+	})
 }
 
 // dumpDebugWindowsRelevantEnv prints the env vars that influence the
@@ -120,6 +128,7 @@ func dumpDebugWindowsChildPID(pid int) {
 		return
 	}
 	fmt.Fprintf(os.Stderr, constants.MsgDebugWinChildPID, pid)
+	emitDebugWindowsJSON("child_pid", map[string]any{"pid": pid})
 }
 
 // dumpDebugWindowsNote prints a freeform context line — used for
@@ -129,8 +138,9 @@ func dumpDebugWindowsNote(format string, args ...interface{}) {
 	if !isDebugWindowsRequested() {
 		return
 	}
-	fmt.Fprintf(os.Stderr, constants.MsgDebugWinNote,
-		fmt.Sprintf(format, args...))
+	msg := fmt.Sprintf(format, args...)
+	fmt.Fprintf(os.Stderr, constants.MsgDebugWinNote, msg)
+	emitDebugWindowsJSON("note", map[string]any{"message": msg})
 }
 
 // fileExists is a small wrapper used only by the dump so the boolean

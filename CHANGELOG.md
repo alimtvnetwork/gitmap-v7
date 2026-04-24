@@ -1,5 +1,46 @@
 # Changelog
 
+## v3.91.0 — (2026-04-24) — `--debug-windows-json` writes a structured NDJSON sink alongside the console dump
+
+### Added
+
+- **JSON sink for `--debug-windows` diagnostics.** Opt in with the new `--debug-windows-json` flag (or `GITMAP_DEBUG_WINDOWS_JSON=<path>` env var). When enabled, every `[debug-windows]` console line is mirrored as a structured event to:
+
+      output/gitmap-debug-windows-2026-04-24_15-30-12.jsonl
+
+  One NDJSON event per line, each with a stable envelope:
+
+      {"ts":"2026-04-24T07:30:12.123Z","event":"handoff","pid":12345,"ppid":12000,"goos":"windows","self":"...","version":"3.91.0","source":"config","target":"C:\\bin\\gitmap.exe","target_exists":true,"child_argv":["update-cleanup","--debug-windows","--debug-windows-json"]}
+
+  Events emitted: `header`, `footer`, `handoff`, `child_pid`, `note`, `command_plan`, `cleanup_plan` (the last one carries the full enumerated `temp_removals` / `backup_removals` / `swap_dirs` / `drive_root_shim` plan as nested arrays).
+
+- **Custom path support.** Pass `--debug-windows-json=/path/to/trace.jsonl` to override the default location — useful when piping into a log aggregator or dropping the file under a network share.
+
+- **Cross-process consolidation.** The opened sink path is exported as `GITMAP_DEBUG_WINDOWS_JSON` and `--debug-windows-json` is appended to the Phase 3 cleanup child's argv, so the detached cleanup process **appends to the same file** rather than creating its own per-process trace. One handoff = one consolidated NDJSON file covering both phases.
+
+- **Path advertised on console.** When the sink opens, `[debug-windows] json sink file   : <path>` is printed once to stderr so users always know where the file landed.
+
+### Why
+
+The console dump (v3.86) and on-disk handoff log (v3.87) both have limitations: the console can be swallowed by detached Windows launchers, and the handoff log is line-oriented text that loses the structured cleanup-plan enumeration added in v3.90. A first-class NDJSON sink gives forensic-grade output that survives every transport and `jq`s cleanly:
+
+    jq 'select(.event=="cleanup_plan") | .temp_removals[].matches' \
+      output/gitmap-debug-windows-*.jsonl
+
+### Implementation
+
+- **`gitmap/cmd/updatedebugwindows_json.go`** (new, 162 lines) — `emitDebugWindowsJSON`, `buildDebugWindowsJSONPayload`, `isDebugWindowsJSONRequested`, `isDebugWindowsJSONFlagWithValue`, `openDebugWindowsJSONFile`, `resolveDebugWindowsJSONPath`, `debugWindowsJSONPath`. Lazy `sync.Once` open, `sync.Mutex`-guarded writes, all errors swallowed (diagnostics must never block the update flow).
+- **`gitmap/cmd/updatedebugwindows.go`** — added one `emitDebugWindowsJSON(...)` call to `dumpDebugWindowsHeader`, `dumpDebugWindowsFooter`, `dumpDebugWindowsHandoff`, `dumpDebugWindowsChildPID`, `dumpDebugWindowsNote`.
+- **`gitmap/cmd/updatedebugwindows_plan.go`** — `dumpDebugWindowsCommandPlan` and `dumpDebugWindowsCleanupPlan` now also emit JSON; the `dumpPlanned*` helpers were refactored to *return* the matched paths so the JSON sink records exactly what the console showed (no duplicated enumeration logic). New helpers `collectAndPrintMatches` and `collectSwapDirMatches` keep every function under 15 lines.
+- **`gitmap/cmd/updatehandoff_phase3.go`** — `buildCleanupChildArgs` and `buildCleanupChildEnv` forward `--debug-windows-json` and `GITMAP_DEBUG_WINDOWS_JSON=<path>` to the cleanup child.
+- **`gitmap/constants/constants_update.go`** — new `FlagDebugWindowsJSON`, `EnvDebugWindowsJSON`, `DebugWindowsJSONFileFmt`, `MsgDebugWinJSONFile`, `MsgDebugWinJSONOpenFail`.
+- **`gitmap/constants/constants.go`** — bumped `Version` to `3.91.0`.
+
+### Compatibility
+
+Pure addition. The sink is OFF by default — `--debug-windows` alone keeps the v3.90 console-only behaviour byte-for-byte. Opt-in writes one small append-only file per handoff under `output/`. File-open failures degrade silently to console-only.
+
+
 ## v3.90.0 — (2026-04-24) — `--debug-windows` shows the exact spawn command and cleanup plan
 
 ### Added

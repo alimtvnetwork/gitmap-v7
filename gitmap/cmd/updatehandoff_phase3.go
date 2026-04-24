@@ -189,11 +189,15 @@ func spawnDeployedCleanupUnix(deployed, source string) {
 }
 
 // buildCleanupChildArgs returns the argv for the detached `update-cleanup`
-// child. --debug-windows is forwarded so the child can dump too.
+// child. --debug-windows and --debug-windows-json are forwarded so the
+// child runs the same diagnostics as the parent.
 func buildCleanupChildArgs() []string {
 	args := []string{constants.CmdUpdateCleanup}
 	if isDebugWindowsRequested() {
 		args = append(args, constants.FlagDebugWindows)
+	}
+	if isDebugWindowsJSONRequested() {
+		args = append(args, constants.FlagDebugWindowsJSON)
 	}
 
 	return args
@@ -201,12 +205,16 @@ func buildCleanupChildArgs() []string {
 
 // buildCleanupChildEnv returns the env for the detached cleanup child.
 // EnvUpdateCleanupDelayMS is always set to give locks time to release.
-// EnvDebugWindows is forwarded so the dump survives even if argv is
-// dropped by an intermediate launcher.
+// EnvDebugWindows and EnvDebugWindowsJSON are forwarded so the dump
+// (and the JSON sink path) survive even if argv is dropped by an
+// intermediate launcher.
 func buildCleanupChildEnv() []string {
 	env := append(os.Environ(), constants.EnvUpdateCleanupDelayMS+"=1500")
 	if isDebugWindowsRequested() {
 		env = append(env, constants.EnvDebugWindows+"=1")
+	}
+	if path := debugWindowsJSONPath(); len(path) > 0 {
+		env = append(env, constants.EnvDebugWindowsJSON+"="+path)
 	}
 
 	return env

@@ -43,8 +43,23 @@ func resolveScanDir(fs *flag.FlagSet) string {
 	return constants.DefaultDir
 }
 
+// CloneFlags holds all parsed clone-command flags and positional args.
+// Exposing the full positional slice (Positional) lets runClone detect
+// the multi-URL invocation form documented in spec/01-app/104-clone-multi.md.
+type CloneFlags struct {
+	Source      string
+	FolderName  string
+	TargetDir   string
+	SSHKeyName  string
+	Positional  []string
+	SafePull    bool
+	GHDesktop   bool
+	NoReplace   bool
+	Verbose     bool
+}
+
 // parseCloneFlags parses flags for the clone command.
-func parseCloneFlags(args []string) (source, folderName, targetDir, sshKeyName string, safePull, ghDesktop, noReplace, verbose bool) {
+func parseCloneFlags(args []string) CloneFlags {
 	fs := flag.NewFlagSet(constants.CmdClone, flag.ExitOnError)
 	targetFlag := fs.String("target-dir", constants.DefaultDir, constants.FlagDescTargetDir)
 	safePullFlag := fs.Bool("safe-pull", false, constants.FlagDescSafePull)
@@ -55,10 +70,17 @@ func parseCloneFlags(args []string) (source, folderName, targetDir, sshKeyName s
 	fs.StringVar(sshKeyFlag, "K", "", "SSH key name (short)")
 	fs.Parse(args)
 
-	source = resolveCloneSource(fs)
-	folderName = resolveCloneFolderName(fs)
-
-	return source, folderName, *targetFlag, *sshKeyFlag, *safePullFlag, *ghDesktopFlag, *noReplaceFlag, *verboseFlag
+	return CloneFlags{
+		Source:     resolveCloneSource(fs),
+		FolderName: resolveCloneFolderName(fs),
+		TargetDir:  *targetFlag,
+		SSHKeyName: *sshKeyFlag,
+		Positional: fs.Args(),
+		SafePull:   *safePullFlag,
+		GHDesktop:  *ghDesktopFlag,
+		NoReplace:  *noReplaceFlag,
+		Verbose:    *verboseFlag,
+	}
 }
 
 // resolveCloneSource returns the clone source from positional args.
@@ -71,10 +93,27 @@ func resolveCloneSource(fs *flag.FlagSet) string {
 }
 
 // resolveCloneFolderName returns the optional folder name (second positional arg).
+// When the second positional looks like a URL, it's NOT a folder name —
+// callers must treat the full positional list as a multi-URL batch instead.
 func resolveCloneFolderName(fs *flag.FlagSet) string {
 	if fs.NArg() > 1 {
-		return fs.Arg(1)
+		second := fs.Arg(1)
+		if isLikelyURL(second) {
+			return ""
+		}
+
+		return second
 	}
 
 	return ""
+}
+
+// isLikelyURL is a cheap prefix check used to disambiguate
+// "folder name" vs "second URL" without importing the clone package.
+func isLikelyURL(s string) bool {
+	lower := strings.ToLower(strings.TrimSpace(s))
+
+	return strings.HasPrefix(lower, "https://") ||
+		strings.HasPrefix(lower, "http://") ||
+		strings.HasPrefix(lower, "git@")
 }

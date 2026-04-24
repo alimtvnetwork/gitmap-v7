@@ -175,8 +175,23 @@
   .hover-scale,
   .btn-hover-lift:hover,
   .docs-blockquote:hover,
-  .docs-inline-code:hover {
+  .docs-inline-code:hover,
+  .card-lift:hover,
+  .reveal > * {
     transform: none !important;
+  }
+
+  /* Disable decorative motion-only effects entirely */
+  .aurora-bg::before,
+  .text-shimmer,
+  .badge-pulse::before,
+  .card-sheen::after,
+  .cta-glow::before {
+    animation: none !important;
+    transition: none !important;
+  }
+  .reveal > * {
+    opacity: 1 !important;
   }
 
   /* docs-h3 padding shift on hover */
@@ -373,6 +388,167 @@
     box-shadow: 0 8px 32px hsl(var(--lang-accent, 220 10% 50%) / 0.1),
                 0 0 0 1px hsl(var(--lang-accent, 220 10% 50%) / 0.15);
   }
+
+  /* ─────────────────────────────────────────────────────────────────────
+     Modern motion utilities (CSS3) — composable, semantic-token only.
+     All movement is gated by prefers-reduced-motion above.
+     ───────────────────────────────────────────────────────────────────── */
+
+  /* Aurora: a slow, drifting radial-gradient backdrop for hero sections. */
+  .aurora-bg {
+    position: relative;
+    isolation: isolate;
+  }
+  .aurora-bg::before {
+    content: "";
+    position: absolute;
+    inset: -20% -10% auto -10%;
+    height: 120%;
+    z-index: -1;
+    background:
+      radial-gradient(40% 60% at 20% 30%, hsl(var(--primary) / 0.18), transparent 70%),
+      radial-gradient(35% 55% at 80% 20%, hsl(var(--accent) / 0.16), transparent 70%),
+      radial-gradient(50% 70% at 50% 90%, hsl(var(--primary) / 0.12), transparent 75%);
+    filter: blur(40px) saturate(1.15);
+    animation: aurora-drift 18s ease-in-out infinite alternate;
+    pointer-events: none;
+  }
+
+  /* Gradient text shimmer — animates the gradient position. */
+  .text-shimmer {
+    background-size: 200% auto;
+    animation: shimmer-pan 6s linear infinite;
+  }
+
+  /* Card lift + sheen sweep. */
+  .card-lift {
+    @apply transition-all duration-300 ease-out;
+    will-change: transform, box-shadow;
+  }
+  .card-lift:hover {
+    transform: translateY(-4px);
+    box-shadow:
+      0 20px 40px -20px hsl(var(--primary) / 0.25),
+      0 0 0 1px hsl(var(--primary) / 0.2);
+  }
+  .card-sheen {
+    position: relative;
+    overflow: hidden;
+  }
+  .card-sheen::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      115deg,
+      transparent 30%,
+      hsl(var(--primary) / 0.12) 50%,
+      transparent 70%
+    );
+    transform: translateX(-100%);
+    transition: transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+    pointer-events: none;
+  }
+  .card-sheen:hover::after {
+    transform: translateX(100%);
+  }
+
+  /* Staggered entrance — apply .reveal to a container. */
+  .reveal > * {
+    opacity: 0;
+    transform: translateY(12px);
+    animation: reveal-up 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+  .reveal > *:nth-child(1) { animation-delay: 0.05s; }
+  .reveal > *:nth-child(2) { animation-delay: 0.15s; }
+  .reveal > *:nth-child(3) { animation-delay: 0.25s; }
+  .reveal > *:nth-child(4) { animation-delay: 0.35s; }
+  .reveal > *:nth-child(5) { animation-delay: 0.45s; }
+  .reveal > *:nth-child(6) { animation-delay: 0.55s; }
+
+  /* Soft pulsing ring for badges / status pills. */
+  .badge-pulse {
+    position: relative;
+  }
+  .badge-pulse::before {
+    content: "";
+    position: absolute;
+    inset: -2px;
+    border-radius: inherit;
+    border: 1px solid hsl(var(--primary) / 0.5);
+    opacity: 0;
+    animation: badge-ring 2.4s ease-out infinite;
+    pointer-events: none;
+  }
+
+  /* Animated underline for nav-style tabs. */
+  .tab-underline {
+    position: relative;
+  }
+  .tab-underline::after {
+    content: "";
+    position: absolute;
+    left: 12%;
+    right: 12%;
+    bottom: 2px;
+    height: 2px;
+    border-radius: 2px;
+    background: hsl(var(--primary));
+    transform: scaleX(0);
+    transform-origin: center;
+    transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .tab-underline[data-active="true"]::after,
+  .tab-underline:hover::after {
+    transform: scaleX(1);
+  }
+
+  /* Primary CTA glow — animated conic ring on hover. */
+  .cta-glow {
+    position: relative;
+  }
+  .cta-glow::before {
+    content: "";
+    position: absolute;
+    inset: -2px;
+    border-radius: inherit;
+    background: conic-gradient(
+      from 0deg,
+      hsl(var(--primary) / 0.6),
+      hsl(var(--accent) / 0.6),
+      hsl(var(--primary) / 0.6)
+    );
+    filter: blur(8px);
+    opacity: 0;
+    z-index: -1;
+    transition: opacity 0.4s ease;
+    animation: cta-spin 6s linear infinite;
+  }
+  .cta-glow:hover::before {
+    opacity: 0.7;
+  }
+}
+
+/* Keyframes — outside @layer so Tailwind keeps them. */
+@keyframes aurora-drift {
+  0%   { transform: translate3d(0, 0, 0) rotate(0deg); }
+  50%  { transform: translate3d(2%, 1%, 0) rotate(2deg); }
+  100% { transform: translate3d(-2%, -1%, 0) rotate(-2deg); }
+}
+@keyframes shimmer-pan {
+  0%   { background-position: 0% center; }
+  100% { background-position: 200% center; }
+}
+@keyframes reveal-up {
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes badge-ring {
+  0%   { opacity: 0.55; transform: scale(1); }
+  80%  { opacity: 0;    transform: scale(1.35); }
+  100% { opacity: 0;    transform: scale(1.35); }
+}
+@keyframes cta-spin {
+  to { transform: rotate(360deg); }
 }
 
 /* Highlight.js — github-dark inspired token colors */

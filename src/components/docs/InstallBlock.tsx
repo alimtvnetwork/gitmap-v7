@@ -48,10 +48,11 @@ const InstallBlock = ({ command, tabs }: InstallBlockProps) => {
             <button
               key={tab.label}
               onClick={() => setActive(i)}
-              className={`px-3 py-1 rounded-md text-xs font-mono transition-colors ${
+              data-active={i === active}
+              className={`tab-underline px-3 py-1 rounded-md text-xs font-mono transition-all duration-300 ${
                 i === active
                   ? "bg-primary text-primary-foreground dark:bg-primary/20 dark:text-primary dark:border dark:border-primary/40"
-                  : "bg-muted text-muted-foreground hover:text-foreground"
+                  : "bg-muted text-muted-foreground hover:text-foreground hover:bg-muted/70"
               }`}
             >
               {tab.label}

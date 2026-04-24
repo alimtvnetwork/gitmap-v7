@@ -181,3 +181,25 @@
   3. Whenever a "shortcut" fix is reported as not working, first check the user's installed binary version — stale PATH installs are the most common reason a "fixed" feature appears to regress.
   4. The update-cleanup chain (issues #09/#10) is on the critical path for getting fixes onto user machines; failures there silently block every other improvement.
 
+## 12 — Comma-Joined URLs Still Corrupted Filesystem on Stale Binary (HARDENED v3.85.0)
+- **Status**: Defensive guard added in v3.85.0; full fix still requires user to actually be on v3.81.0+
+- **Reported**: User ran `gitmap clone https://github.com/.../email-creator-v1,https://github.com/.../email-reader-v3,https://github.com/.../account-automator`. Output: `Cloning email-creator-v1 into https://github.com/alimtvnetwork/email-reader-v3...` then `fatal: could not create leading directories of 'D:\wp-work\...\https:\github.com\alimtvnetwork\email-reader-v3.gitmap-tmp-...': Invalid argument`. Also poisoned by a leftover `pending task already exists for Clone at D:\wp-work\...\https:\github.com\alimtvnetwork\email-reader-v3 (Id 1)` from a prior crashed run.
+- **Root Cause** (compounding):
+  1. **Stale binary (primary).** Same as issue #11: the user's installed `gitmap.exe` predates v3.80's `shouldUseMultiClone` detector. PowerShell silently comma-split `url1,url2,url3` into 3 argv entries; the old binary saw `cf.Source=url1`, `cf.FolderName=url2`, ignored `url3`, and tried to clone url1 INTO url2's path — producing the impossible Windows path `D:\...\https:\github.com\...`.
+  2. **No defensive guard in `executeDirectClone`.** Even on the new binary, if `shouldUseMultiClone` somehow returned false (e.g. a future PowerShell quirk, exotic argv shape, alternate shell), `executeDirectClone` would happily accept a URL as `folderName` and pass it to `filepath.Abs` → `git clone`. The function trusted its caller blindly.
+  3. **Pending-task DB poisoning.** The first crashed run inserted a pending task at the corrupted target path. Subsequent runs hit `pending task already exists for Clone at D:\...\https:\github.com\...` because nothing automatically purges tasks whose `TargetPath` is illegal on the host filesystem.
+- **Solution (v3.85.0)**:
+  1. Added `isLikelyURL(folderName)` guard at the top of `executeDirectClone` (cmd/clone.go) and `executeDirectCloneOne` (cmd/clonemulti.go). If the folder name is URL-shaped, abort with a self-explanatory error pointing the user at the comma-joined or quoted multi-clone form — no filesystem touched, no pending task created, no git invocation.
+  2. New `ErrCloneFolderIsURL` constant prints the offending name plus the exact corrected command (`gitmap clone url1,url2`) and a tip to quote the whole list if the shell is still mangling commas.
+  3. Bumped to v3.85.0 so the user can verify with `gitmap version` after the next successful update.
+- **NOT in v3.85.0 (deferred)**: auto-purging pending tasks with Windows-illegal `TargetPath`. Tracked separately because it touches DB-layer code and needs its own migration test. For now, users can clear the orphan with `gitmap pending clear` (or by deleting the row directly) — documented in the error message as a follow-up if needed.
+- **Files Affected**:
+  - `gitmap/cmd/clone.go` — `executeDirectClone` URL-folder guard at function entry
+  - `gitmap/cmd/clonemulti.go` — same guard in `executeDirectCloneOne`
+  - `gitmap/constants/constants_messages.go` — new `ErrCloneFolderIsURL` constant with actionable hint
+  - `gitmap/constants/constants.go` — version bumped to `3.85.0`
+- **Why The User Still Sees It**: Same binary-staleness story as #11. The deployed `gitmap.exe` on PATH is still pre-v3.80 because update-cleanup (#09/#10) keeps failing. Until that lands AND the user re-runs `gitmap update` AND reopens the terminal, every "fix" we ship lives only in source. The v3.85.0 guard ensures that **once** the new binary actually reaches the user, this specific filesystem-corruption failure mode is impossible — no matter what shell quirks lie ahead.
+- **Prevention**:
+  1. Defensive input validation at every public function boundary, even when an internal caller "should never" pass bad data — shells and parsers surprise you.
+  2. Pending-task duplicate detection should pre-validate `TargetPath` against host filesystem rules before storing, so future bad inputs can't poison the DB.
+  3. Critical user-facing fixes shipped in source are worthless until #09/#10 unblocks update-cleanup. Treat that chain as P0 for any further CLI improvements.

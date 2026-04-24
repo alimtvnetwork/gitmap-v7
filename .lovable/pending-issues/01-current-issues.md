@@ -63,3 +63,24 @@
   - `gitmap/cmd/root.go` — argv-rewrite shortcut before alias extraction and dispatch
   - `gitmap/constants/constants.go` — version bumped to `3.81.0`
 - **UX Note**: The shortcut only fires for URLs (HTTPS/SSH git). Local file paths, shorthands (`json`/`csv`/`text`), and all existing subcommands keep their current behaviour.
+
+## 08 — CI Lint Failures: errorlint / gocritic / unparam (FIXED v3.81.1)
+- **Status**: Fixed in v3.81.1
+- **Reported**: `golangci-lint run` failed in CI with 3 NEW findings vs main baseline:
+  1. `cmd/reinstall.go:125` — `errorlint`: `err.(*exec.ExitError)` type assertion fails on wrapped errors
+  2. `committransfer/env.go:6` — `gocritic` (unlambda): `func() []string { return os.Environ() }` should be `os.Environ`
+  3. `committransfer/replay.go:126` — `unparam`: `shouldSkipPath` parameter `info os.FileInfo` is never read
+- **Root Cause**:
+  1. **errorlint**: Direct type assertion on `error` only matches the outermost concrete type. If any wrapper (e.g. `fmt.Errorf("%w", err)`) sits between, the assertion silently fails and we'd report exit code `1` instead of the real script exit code. The project's `.golangci.yml` enables `errorlint` precisely to forbid this pattern (memory rule: "Use `errors.Is`" — same family applies for `errors.As`).
+  2. **gocritic unlambda**: Wrapping a parameterless, same-signature function in another lambda is dead indirection — `os.Environ` already satisfies `func() []string`. The wrapper was a leftover from an earlier refactor that briefly took arguments.
+  3. **unparam**: `shouldSkipPath` historically accepted `info os.FileInfo` to check `IsDir()`, but that check was lifted into both call sites (so the caller can return `filepath.SkipDir`). The parameter became dead weight; `unparam` correctly flagged it.
+- **Solution**:
+  1. `cmd/reinstall.go`: replaced the type assertion with `var exitErr *exec.ExitError; if errors.As(err, &exitErr) { ... }` and added `"errors"` to imports. Now correctly unwraps any future wrapping.
+  2. `committransfer/env.go`: simplified to `var currentEnv = os.Environ` — same behaviour, no allocation, no indirection. Tests can still stub it (`currentEnv = func() []string { return ... }`).
+  3. `committransfer/replay.go`: removed the unused `info os.FileInfo` parameter from `shouldSkipPath`; updated both call sites in `snapshotCopy` and `mirrorPrune`. Caller still has its own `info` in scope for the `IsDir()` branch after the skip check.
+- **Files Affected**:
+  - `gitmap/cmd/reinstall.go` — `errors.As` + import
+  - `gitmap/committransfer/env.go` — direct method-value assignment
+  - `gitmap/committransfer/replay.go` — signature + 2 call sites
+  - `gitmap/constants/constants.go` — version bumped to `3.81.1`
+- **Prevention**: All three rules (`errorlint`, `gocritic`, `unparam`) are already enabled in `.golangci.yml` — the issue was that they passed silently before the offending code was introduced. Going forward, run `golangci-lint run --path-prefix=gitmap` locally before pushing (or rely on the CI diff-vs-baseline gate which now catches this).

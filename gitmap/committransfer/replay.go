@@ -98,7 +98,7 @@ func snapshotCopy(source, target string, opts Options) error {
 		if relErr != nil {
 			return relErr
 		}
-		if shouldSkipPath(rel, info, opts) {
+		if shouldSkipPath(rel, opts) {
 			if info.IsDir() {
 				return filepath.SkipDir
 			}
@@ -123,7 +123,7 @@ func snapshotCopy(source, target string, opts Options) error {
 }
 
 // shouldSkipPath returns true for paths the snapshot must ignore.
-func shouldSkipPath(rel string, info os.FileInfo, opts Options) bool {
+func shouldSkipPath(rel string, opts Options) bool {
 	if rel == "." {
 		return false
 	}
@@ -169,7 +169,7 @@ func mirrorPrune(target string, wanted map[string]struct{}, opts Options) error 
 		if relErr != nil {
 			return relErr
 		}
-		if shouldSkipPath(rel, info, opts) {
+		if shouldSkipPath(rel, opts) {
 			if info.IsDir() {
 				return filepath.SkipDir
 			}

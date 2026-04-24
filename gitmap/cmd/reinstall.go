@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -122,7 +123,8 @@ func executeReinstallRepo() {
 	cmd.Dir = constants.RepoPath
 	if err := cmd.Run(); err != nil {
 		exitCode := 1
-		if exitErr, ok := err.(*exec.ExitError); ok {
+		var exitErr *exec.ExitError
+		if errors.As(err, &exitErr) {
 			exitCode = exitErr.ExitCode()
 		}
 		fmt.Fprintf(os.Stderr, constants.ErrReinstallScriptFailed, scriptName, exitCode)

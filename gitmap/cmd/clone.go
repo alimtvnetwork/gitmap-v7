@@ -152,6 +152,16 @@ func repoNameFromURL(url string) string {
 // flow in spec/01-app/96-clone-replace-existing-folder.md. Pass noReplace=true
 // to restore the strict abort-on-exists behavior.
 func executeDirectClone(url, folderName string, ghDesktopFlag, noReplace bool) {
+	// Defensive guard: a URL-shaped folder name is ALWAYS a parser bug
+	// (PowerShell silently splitting comma-joined URLs into separate argv
+	// entries that the multi-clone detector failed to catch). Refuse it
+	// loudly instead of corrupting the filesystem with paths like
+	// `D:\...\https:\github.com\alimtvnetwork\repo`. See pending issue #12.
+	if isLikelyURL(folderName) {
+		fmt.Fprintf(os.Stderr, constants.ErrCloneFolderIsURL, folderName, url, folderName)
+		os.Exit(1)
+	}
+
 	repoName := repoNameFromURL(url)
 	if len(folderName) == 0 {
 		parsed := clonenext.ParseRepoName(repoName)

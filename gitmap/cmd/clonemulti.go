@@ -75,6 +75,13 @@ func classifyURLs(flat []string) (valid, invalid []string) {
 // GitHub Desktop, and returns any error instead of calling os.Exit.
 // Folder name is auto-derived (versioned URLs flatten via clonenext).
 func executeDirectCloneOne(url, folderName string, ghDesktopFlag, noReplace bool) error {
+	// Defensive guard: never let a URL-shaped folder name slip through.
+	// In multi-clone mode this should be impossible (we always pass ""),
+	// but the check is cheap and survives future refactors.
+	if isLikelyURL(folderName) {
+		return fmt.Errorf("refusing URL-shaped folder name %q (would corrupt filesystem)", folderName)
+	}
+
 	repoName := repoNameFromURL(url)
 	folderName = resolveCloneFolder(repoName, folderName)
 

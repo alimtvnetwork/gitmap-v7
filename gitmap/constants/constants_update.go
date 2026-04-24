@@ -95,6 +95,7 @@ const (
 	MsgDebugWinSelf       = "[debug-windows] self executable  : %s\n"
 	MsgDebugWinPID        = "[debug-windows] self pid         : %d\n"
 	MsgDebugWinPPID       = "[debug-windows] parent pid       : %d\n"
+	MsgDebugWinLogFile    = "[debug-windows] handoff log file : %s\n"
 	MsgDebugWinSource     = "[debug-windows] resolution source: %s\n"
 	MsgDebugWinTarget     = "[debug-windows] resolved target  : %s\n"
 	MsgDebugWinTargetExists = "[debug-windows] target exists    : %t\n"

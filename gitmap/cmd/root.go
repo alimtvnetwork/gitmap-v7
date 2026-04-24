@@ -46,6 +46,7 @@ func Run() {
 	}
 
 	command := os.Args[1]
+	runStartupVersionCheck(command, os.Args[2:])
 	dispatch(command)
 }
 

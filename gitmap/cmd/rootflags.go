@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"flag"
+	"strings"
 
 	"github.com/alimtvnetwork/gitmap-v7/gitmap/constants"
 )

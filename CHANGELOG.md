@@ -1,5 +1,29 @@
 # Changelog
 
+## v3.85.1 — (2026-04-24) — Fix three CI lint regressions (errorlint / gocritic / unparam)
+
+### Fixed
+
+- **`cmd/reinstall.go`** — replaced direct `err.(*exec.ExitError)` type assertion with `errors.As`, so wrapped errors from `cmd.Run()` are still recognised and the correct exit code is propagated. (`errorlint`)
+- **`committransfer/env.go`** — `currentEnv` now points at `os.Environ` directly instead of wrapping it in a zero-arg lambda. The previous form added an extra call frame for no benefit. (`gocritic/unlambda`)
+- **`committransfer/replay.go`** — removed the unused `info os.FileInfo` parameter from `shouldSkipPath`; both call sites already had `info` in scope from their `filepath.Walk` callbacks and only needed `(rel, opts)`. (`unparam`)
+
+### Why It Repeated
+
+The CI pipeline kept reporting the same three NEW findings because earlier runs landed on a stale commit and the auto-summary generator had no per-finding fingerprint to cross-check against. The auto-resolve pass added in the previous task will now flip any matching open `## NN — CI Lint Failures` entry to `FIXED` automatically once a clean run lands. Logged as **Issue #13** in `.lovable/pending-issues/01-current-issues.md` with full root-cause and prevention notes.
+
+### Implementation
+
+- `gitmap/cmd/reinstall.go` — `errors.As(err, &exitErr)` pattern.
+- `gitmap/committransfer/env.go` — `var currentEnv = os.Environ`.
+- `gitmap/committransfer/replay.go` — `shouldSkipPath(rel string, opts Options) bool` + updated call sites.
+- `gitmap/constants/constants.go` — bumped `Version` to `3.85.1`.
+
+### Compatibility
+
+No behaviour change. Pure lint/correctness cleanup. Safe drop-in upgrade.
+
+
 ## v3.84.0 — (2026-04-24) — Fix self-update deploying to the wrong Windows install
 
 ### Fixed

@@ -155,3 +155,29 @@
   3. Embedded script comments/docs must be updated together with orchestration changes so future debugging is based on reality, not stale notes.
   4. Best-effort cleanup may stay non-fatal, but target-resolution failures must always be visible in the console and verbose log.
 
+## 13 — CI Lint Failures: errorlint / gocritic / unparam (FIXED v3.85.1)
+- **Status**: Fixed in v3.85.1
+- **Reported**: golangci-lint v1.64.8 reported 3 NEW findings on a CI run:
+  1. `cmd/reinstall.go:125` — `errorlint`: `err.(*exec.ExitError)` will fail on wrapped errors.
+  2. `committransfer/env.go:6` — `gocritic/unlambda`: `func() []string { return os.Environ() }` should be `os.Environ`.
+  3. `committransfer/replay.go:126` — `unparam`: `shouldSkipPath` parameter `info` is unused.
+- **Root Cause**: Three independent style/correctness regressions slipped in across separate refactors:
+  1. Direct type assertion on `error` instead of `errors.As` — predates the project's errorlint adoption; missed in earlier sweep.
+  2. A wrapping lambda around `os.Environ` left over from an earlier "test-stubbable" pattern that was simplified later.
+  3. `shouldSkipPath` originally inspected `info.IsDir()`, but the dir-skip logic moved into the callers (`filepath.Walk` callbacks already had `info` in scope), leaving `info` dead in the helper signature.
+- **Solution** (already in source as of this entry):
+  1. `cmd/reinstall.go` now uses `var exitErr *exec.ExitError; if errors.As(err, &exitErr) { exitCode = exitErr.ExitCode() }`.
+  2. `committransfer/env.go` declares `var currentEnv = os.Environ` (no lambda).
+  3. `committransfer/replay.go` `shouldSkipPath(rel string, opts Options) bool` — `info` removed; both call sites updated to `shouldSkipPath(rel, opts)`.
+- **Files Affected**:
+  - `gitmap/cmd/reinstall.go`
+  - `gitmap/committransfer/env.go`
+  - `gitmap/committransfer/replay.go`
+- **Why It Repeated**: The CI pipeline ran on a stale commit before these fixes were pushed. The auto-summary generator (`.github/scripts/lint-issue-summary.py`) does NOT yet have a per-finding fingerprint, so re-runs against the same stale commit kept producing the same NEW set without flipping prior FIXED entries. This is now mitigated by the auto-resolve pass added in the previous task — once the next CI run on a fresh commit reports 0 NEW for these fingerprints, any open CI-lint entry will be auto-flipped to FIXED.
+- **Prevention**:
+  1. Run `golangci-lint run ./...` locally before pushing — the same `.golangci.yml` is used in CI.
+  2. Never type-assert `error` directly; always go through `errors.As` / `errors.Is`. Enforced by `errorlint`.
+  3. Don't wrap stdlib funcs in zero-arg lambdas. If a test seam is needed, assign the function value directly (`var x = pkg.Func`).
+  4. When refactoring helper internals, re-check the helper's signature for now-dead parameters. `unparam` catches this if run locally.
+  5. The auto-resolve pass will close stale CI-lint entries automatically on the next clean run — no manual sweep required.
+

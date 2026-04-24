@@ -50,10 +50,14 @@ func delayUpdateCleanupIfNeeded() {
 	if err != nil || ms <= 0 {
 		fmt.Fprintf(os.Stderr, constants.ErrUpdateCleanDelayInvalid, raw)
 		logUpdateCleanup(constants.UpdateCleanupLogDelayInvalid, raw)
+		logHandoffEvent("cleanup", "delay_invalid",
+			map[string]string{"raw": raw})
 
 		return
 	}
 	fmt.Printf(constants.MsgUpdateCleanDelay, ms)
+	logHandoffEvent("cleanup", "delay",
+		map[string]string{"ms": fmt.Sprintf("%d", ms)})
 	time.Sleep(time.Duration(ms) * time.Millisecond)
 }
 
